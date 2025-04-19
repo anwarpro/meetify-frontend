@@ -1,12 +1,19 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import CustomeModal from '../custom/CustomModal';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import userService from '../../service/user/userService';
 import swal from 'sweetalert';
+import userIcon from '../assets/icons/user-colored.png';
+import Image from 'next/image';
+
 type Iprops = {
   openModal: { edit: boolean };
   fetchData: Dispatch<SetStateAction<void>>;
+  teamNames: string[];
+  user?: any;
+  setSuccessModal?: Dispatch<SetStateAction<{ edit: boolean }>>;
+  setDebounceSearch: Dispatch<SetStateAction<string>>;
 };
 type Inputs = {
   fullName: string;
@@ -30,25 +37,54 @@ const TeamMemberModal = (props: Iprops) => {
     data.role = 'team_member';
     data.profileImage =
       'https://phero-web.nyc3.cdn.digitaloceanspaces.com/uat-images/public/profileImage.png';
-    userService
-      .addManualUser(data)
-      .then((res) => {
-        swal('success', 'Manual User Created Successfully', 'success');
-        setCloseModal({ status: false });
-        props.fetchData();
-      })
-      .catch((err) => {
-        if (err?.response?.data?.message) {
-          swal('User Already Exist', err?.response?.data.message, 'error');
-        } else {
-          swal('error', 'something went wrong', 'error');
-        }
-      });
+
+    if (props.user?.role) {
+      const newData = {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        team: data.team,
+        role: data.role,
+      };
+
+      userService
+        .updateManualUser(props?.user?._id, newData)
+        .then((res) => {
+          setCloseModal({ status: false });
+          props.fetchData();
+          props.setDebounceSearch('');
+          swal('success', 'User Updated Successfully', 'success');
+        })
+        .catch((err) => {
+          console.log('err', err);
+          swal('error', 'User Failed to Update', 'error');
+        });
+    } else {
+      userService
+        .addManualUser(data)
+        .then((res) => {
+          swal('success', 'Manual User Created Successfully', 'success');
+          setCloseModal({ status: false });
+          props.fetchData();
+        })
+        .catch((err) => {
+          if (err?.response?.data?.message) {
+            swal('User Already Exist', err?.response?.data.message, 'error');
+          } else {
+            swal('error', 'something went wrong', 'error');
+          }
+        });
+    }
   };
 
   useEffect(() => {
-    reset();
-  }, [props.openModal]);
+    if (props.openModal && props.user?.role) {
+      reset(props.user);
+    }
+    if (props.openModal) {
+      reset();
+    }
+  }, [props.openModal, props.user]);
 
   return (
     <CustomeModal
@@ -62,6 +98,13 @@ const TeamMemberModal = (props: Iprops) => {
         width: '400px',
       }}
     >
+      <Box className="d-flex align-items-center">
+        <Image src={userIcon} width="30" height="30" alt="user" />
+        <Typography fontWeight="bold" className="ms-3" fontSize="18px">
+          {props.user ? 'Update Team Member' : 'Add Team Member'}
+        </Typography>
+      </Box>
+      <hr style={{ marginBottom: '20px', marginTop: '20px', opacity: '0.1' }} />
       <Box
         sx={{
           '& .form-control': {
@@ -102,7 +145,7 @@ const TeamMemberModal = (props: Iprops) => {
                 {...register('fullName', { required: true })}
               />
               {errors.fullName && (
-                <span className="text-danger d-inline-block pt-2">fullName is required</span>
+                <span className="text-danger d-inline-block pt-2">Name is required</span>
               )}
             </div>
             <div className="mb-3">
@@ -113,29 +156,32 @@ const TeamMemberModal = (props: Iprops) => {
                 {...register('email', { required: true })}
               />
               {errors.email && (
-                <span className="text-danger d-inline-block pt-2">email is required</span>
+                <span className="text-danger d-inline-block pt-2">Email is required</span>
               )}
             </div>
             <div className="mb-3">
               <label htmlFor="phone">Phone</label>
               <input
+                type="number"
                 className="form-control mt-2"
                 placeholder="Enter your Phone no."
                 {...register('phone', { required: true })}
               />
               {errors.phone && (
-                <span className="text-danger d-inline-block pt-2">email is required</span>
+                <span className="text-danger d-inline-block pt-2">Phone is required</span>
               )}
             </div>
             <div className="mb-3">
               <label htmlFor="team">Team</label>
               <select {...register('team', { required: true })} className="form-control mt-2">
-                <option value={'Neptune'}>Neptune</option>
-                <option value={'Job Placement'}>Job Placement</option>
-                <option value={'Phitron'}>Phitron</option>
+                {props.teamNames?.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
               </select>
               {errors.team && (
-                <span className="text-danger d-inline-block pt-2">team is required</span>
+                <span className="text-danger d-inline-block pt-2">Team is required</span>
               )}
             </div>
             <Box
@@ -148,7 +194,11 @@ const TeamMemberModal = (props: Iprops) => {
               className="d-flex justify-content-between"
             ></Box>
 
-            <input className={`submit-btn form-control `} value={'Submit'} type="submit" />
+            <input
+              className={`submit-btn form-control `}
+              value={props.user ? 'Update' : 'Submit'}
+              type="submit"
+            />
           </form>
         </Box>
       </Box>

@@ -21,6 +21,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import UserDetails from './UserDetails';
 import { debounce } from 'lodash';
 import SuccessPopUp from './SuccessPopUp';
+import userService from '../../service/user/userService';
+import TeamMemberModal from './TeamMemberModal';
 
 type IProps = {
   fields: object[];
@@ -34,7 +36,8 @@ type IProps = {
   setSearchText: Dispatch<SetStateAction<string>>;
   fetchData: Dispatch<SetStateAction<void>>;
   role: string;
-  handleAddTeamMember: Dispatch<SetStateAction<void>>;
+  // handleAddTeamMember: Dispatch<SetStateAction<void>>;
+  teamNames: string[];
 };
 
 const UserListTable = (props: IProps) => {
@@ -42,6 +45,11 @@ const UserListTable = (props: IProps) => {
   const [editUser, setEditUser] = useState(null);
   const [successModal, setSuccessModal] = useState<{ edit: boolean }>({ edit: false });
   const [debounceSearch, setDebounceSearch] = useState('');
+  const [openMemberModal, setOpenMemberModal] = useState<{ edit: boolean }>({ edit: false });
+  const [openMemberModalForEdit, setOpenMemberModalForEdit] = useState<{ edit: boolean }>({
+    edit: false,
+  });
+
   const handleSearch = (e: any) => {
     props?.setPage(1);
     setDebounceSearch(e.target.value);
@@ -70,8 +78,13 @@ const UserListTable = (props: IProps) => {
   };
 
   const handleEdit = (user: any) => {
-    setEditUser(user);
-    setOpenModal({ edit: true });
+    if (props.role === 'team_member') {
+      setEditUser(user);
+      setOpenMemberModalForEdit({ edit: true });
+    } else {
+      setEditUser(user);
+      setOpenModal({ edit: true });
+    }
   };
   const Search = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -101,6 +114,10 @@ const UserListTable = (props: IProps) => {
     },
   }));
 
+  const handleAddTeamMember = () => {
+    setOpenMemberModal({ edit: true });
+  };
+
   return (
     <div>
       <div className="search mb-3 d-flex align-items-center justify-content-between">
@@ -122,7 +139,7 @@ const UserListTable = (props: IProps) => {
           variant="outlined"
         />
         {props.role === 'team_member' && (
-          <button onClick={() => props.handleAddTeamMember()} className="btn btn-light px-3 py-2">
+          <button onClick={() => handleAddTeamMember()} className="btn btn-light px-3 py-2">
             Add Member
           </button>
         )}
@@ -214,7 +231,31 @@ const UserListTable = (props: IProps) => {
         setSuccessModal={setSuccessModal}
         fetchData={props?.fetchData}
         setDebounceSearch={setDebounceSearch}
+        teamNames={props.teamNames}
       />
+
+      {openMemberModal && (
+        <TeamMemberModal
+          openModal={openMemberModal}
+          fetchData={props.fetchData}
+          teamNames={props.teamNames}
+          // user={editUser}
+          setSuccessModal={setSuccessModal}
+          setDebounceSearch={setDebounceSearch}
+        />
+      )}
+
+      {openMemberModal && (
+        <TeamMemberModal
+          openModal={openMemberModalForEdit}
+          fetchData={props.fetchData}
+          teamNames={props.teamNames}
+          user={editUser}
+          setSuccessModal={setSuccessModal}
+          setDebounceSearch={setDebounceSearch}
+        />
+      )}
+
       <SuccessPopUp openModal={successModal} />
     </div>
   );

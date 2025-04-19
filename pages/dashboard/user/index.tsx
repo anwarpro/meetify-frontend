@@ -28,6 +28,7 @@ const UserManagement = () => {
   const [total, setTotal] = useState(0);
   const [userCountList, setUserCountList] = useState([]);
   const [searchText, setSearchText] = useState('');
+  const [teamNames, setTeamNames] = useState([]);
 
   const fetchData = () => {
     userService
@@ -45,14 +46,21 @@ const UserManagement = () => {
       })
       .catch((err) => console.log(err));
   };
+
   useEffect(() => {
     fetchData();
   }, [role, limit, page, searchText]);
 
-  const [openMemberModal, setOpenMemberModal] = useState<{ edit: boolean }>({ edit: false });
-  const handleAddTeamMember = () => {
-    setOpenMemberModal({ edit: true });
-  };
+  useEffect(() => {
+    userService
+      .getTeamInfo()
+      .then((res) => {
+        setTeamNames(res?.data?.team);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
 
   return (
     <Box
@@ -120,13 +128,12 @@ const UserManagement = () => {
             searchText={searchText}
             fetchData={fetchData}
             role={role}
-            handleAddTeamMember={handleAddTeamMember}
+            // handleAddTeamMember={handleAddTeamMember}
             // isLoading={isLoading}
+            teamNames={teamNames}
           />
         </TabPanel>
       </TabContext>
-
-      {openMemberModal && <TeamMemberModal openModal={openMemberModal} fetchData={fetchData} />}
     </Box>
   );
 };

@@ -27,6 +27,10 @@ class UserService {
     return axios.patch<UserResponse>(`${API_URL}/${id}`, { ...payload });
   };
 
+  updateManualUser = (id: string, payload: any) => {
+    return axios.patch<UserResponse>(`${API_URL}/update-manual-user/${id}`, { ...payload });
+  };
+
   addManualUser = (payload: any) => {
     return axios.post<UserResponse>(`${API_URL}/add-manual-user`, { ...payload });
   };
@@ -37,6 +41,10 @@ class UserService {
 
   verifyManualUser = (payload: any) => {
     return axios.post<UserResponse>(`${API_URL}/verify-manual-user`, { ...payload });
+  };
+
+  getTeamInfo = () => {
+    return axios.get(`${API_URL}/hq/team-member-info`);
   };
 
 }
